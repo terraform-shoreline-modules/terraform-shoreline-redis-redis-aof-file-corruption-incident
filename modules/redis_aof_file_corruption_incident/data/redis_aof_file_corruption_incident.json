@@ -1,0 +1,178 @@
+{
+  "name": "redis_aof_file_corruption_incident",
+  "description": "Redis AOF (Append-Only File) File Corruption Incident is an issue that occurs when the data in the Redis AOF file becomes corrupt and unreadable. This can happen due to multiple reasons such as power outages, hardware failures, or software bugs. When the Redis AOF file becomes corrupt, it can lead to a loss of critical data or application downtime. It is important to have a process in place to monitor and handle such incidents to minimize the impact on business operations.",
+  "params": [
+    {
+      "name": "PATH_TO_REDIS_AOF_BACKUP_DIRECTORY",
+      "value": ""
+    },
+    {
+      "name": "PATH_TO_REDIS_DATA_DIRECTORY",
+      "value": ""
+    },
+    {
+      "name": "PATH_TO_LATEST_BACKUP",
+      "value": ""
+    },
+    {
+      "name": "PATH_TO_AOF_FILE",
+      "value": ""
+    },
+    {
+      "name": "PATH_TO_RDB_FILE",
+      "value": ""
+    },
+    {
+      "name": "HOST_NAME",
+      "value": ""
+    },
+    {
+      "name": "K8S_CLUSTER_NAME",
+      "value": ""
+    },
+    {
+      "name": "NAMESPACE",
+      "value": ""
+    }
+  ],
+  "cells": [
+    {
+      "name": "cell_1",
+      "type": "MARKDOWN",
+      "enabled": true,
+      "content": "## Redis AOF File Corruption Incident\nRedis AOF (Append-Only File) File Corruption Incident is an issue that occurs when the data in the Redis AOF file becomes corrupt and unreadable. This can happen due to multiple reasons such as power outages, hardware failures, or software bugs. When the Redis AOF file becomes corrupt, it can lead to a loss of critical data or application downtime. It is important to have a process in place to monitor and handle such incidents to minimize the impact on business operations."
+    },
+    {
+      "name": "cell_2",
+      "type": "MARKDOWN",
+      "enabled": true,
+      "content": "## Check if Redis server is running"
+    },
+    {
+      "name": "cell_3",
+      "type": "OP_LANG",
+      "enabled": true,
+      "content": "(host | host_name=$HOST_NAME) union (pod | k8s_cluster_name=$K8S_CLUSTER_NAME | namespace=$NAMESPACE) | `systemctl status redis`"
+    },
+    {
+      "name": "cell_4",
+      "type": "MARKDOWN",
+      "enabled": true,
+      "content": "## Check Redis logs for any error messages related to AOF file"
+    },
+    {
+      "name": "cell_5",
+      "type": "OP_LANG",
+      "enabled": true,
+      "content": "(host | host_name=$HOST_NAME) union (pod | k8s_cluster_name=$K8S_CLUSTER_NAME | namespace=$NAMESPACE) | `grep \"AOF\" /var/log/redis/redis-server.log`"
+    },
+    {
+      "name": "cell_6",
+      "type": "MARKDOWN",
+      "enabled": true,
+      "content": "## Verify the AOF file is being written"
+    },
+    {
+      "name": "cell_7",
+      "type": "OP_LANG",
+      "enabled": true,
+      "content": "(host | host_name=$HOST_NAME) union (pod | k8s_cluster_name=$K8S_CLUSTER_NAME | namespace=$NAMESPACE) | `redis-cli info persistence | grep aof_enabled`"
+    },
+    {
+      "name": "cell_8",
+      "type": "MARKDOWN",
+      "enabled": true,
+      "content": "## Verify the current AOF file size"
+    },
+    {
+      "name": "cell_9",
+      "type": "OP_LANG",
+      "enabled": true,
+      "content": "(host | host_name=$HOST_NAME) union (pod | k8s_cluster_name=$K8S_CLUSTER_NAME | namespace=$NAMESPACE) | `redis-cli info persistence | grep aof_current_size`"
+    },
+    {
+      "name": "cell_10",
+      "type": "MARKDOWN",
+      "enabled": true,
+      "content": "## Check for errors in the AOF file"
+    },
+    {
+      "name": "cell_11",
+      "type": "OP_LANG",
+      "enabled": true,
+      "content": "(host | host_name=$HOST_NAME) union (pod | k8s_cluster_name=$K8S_CLUSTER_NAME | namespace=$NAMESPACE) | `redis-check-aof ${PATH_TO_AOF_FILE}`"
+    },
+    {
+      "name": "cell_12",
+      "type": "MARKDOWN",
+      "enabled": true,
+      "content": "## If errors found, try to fix the AOF file"
+    },
+    {
+      "name": "cell_13",
+      "type": "OP_LANG",
+      "enabled": true,
+      "content": "(host | host_name=$HOST_NAME) union (pod | k8s_cluster_name=$K8S_CLUSTER_NAME | namespace=$NAMESPACE) | `redis-check-aof --fix ${PATH_TO_AOF_FILE}`"
+    },
+    {
+      "name": "cell_14",
+      "type": "MARKDOWN",
+      "enabled": true,
+      "content": "## If fixing the AOF file fails, restore from latest backup"
+    },
+    {
+      "name": "cell_15",
+      "type": "OP_LANG",
+      "enabled": true,
+      "content": "(host | host_name=$HOST_NAME) union (pod | k8s_cluster_name=$K8S_CLUSTER_NAME | namespace=$NAMESPACE) | `cp ${PATH_TO_LATEST_BACKUP} ${PATH_TO_AOF_FILE}`"
+    },
+    {
+      "name": "cell_16",
+      "type": "MARKDOWN",
+      "enabled": true,
+      "content": "## If no backup available, use Redis RDB file to recover data"
+    },
+    {
+      "name": "cell_17",
+      "type": "OP_LANG",
+      "enabled": true,
+      "content": "(host | host_name=$HOST_NAME) union (pod | k8s_cluster_name=$K8S_CLUSTER_NAME | namespace=$NAMESPACE) | `redis-cli --rdb ${PATH_TO_RDB_FILE}`"
+    },
+    {
+      "name": "cell_18",
+      "type": "MARKDOWN",
+      "enabled": true,
+      "content": "## Restart Redis server"
+    },
+    {
+      "name": "cell_19",
+      "type": "OP_LANG",
+      "enabled": true,
+      "content": "(host | host_name=$HOST_NAME) union (pod | k8s_cluster_name=$K8S_CLUSTER_NAME | namespace=$NAMESPACE) | `systemctl restart redis`"
+    },
+    {
+      "name": "cell_20",
+      "type": "MARKDOWN",
+      "enabled": true,
+      "content": "## Restore from backup: If a recent backup is available, restore the Redis AOF file from the backup and verify the data integrity."
+    },
+    {
+      "name": "cell_21",
+      "type": "OP_LANG",
+      "enabled": true,
+      "content": "host | host_name=$HOST_NAME | invoke_redis_aof_restore($PATH_TO_REDIS_AOF_BACKUP_DIRECTORY, $PATH_TO_REDIS_DATA_DIRECTORY)"
+    },
+    {
+      "name": "cell_22",
+      "type": "MARKDOWN",
+      "enabled": true,
+      "content": "## Repair the AOF file: Use Redis tools such as "
+    },
+    {
+      "name": "cell_23",
+      "type": "OP_LANG",
+      "enabled": true,
+      "content": "host | host_name=$HOST_NAME | invoke_redis_aof_repair($PATH_TO_AOF_FILE)"
+    }
+  ]
+}
